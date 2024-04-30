@@ -6,6 +6,7 @@
 - [[#playbooks][Playbooks]]
   - [[#yavdr07yml][yavdr07.yml]]
   - [[#yavdr07-headlessyml][yavdr07-headless.yml]]
+  - [[#yavdr07-arm64yml][yavdr07-arm64.yml]]
   - [[#yavdr07-rpiyml][yavdr07-rpi.yml]]
 - [[#hosts][Hosts]]
 - [[#group-variables][Group Variables]]
@@ -68,6 +69,7 @@
   - [[#vdr-epg-daemon][vdr-epg-daemon]]
   - [[#install-sundtek][install-sundtek]]
   - [[#channel-logos][channel logos]]
+  - [[#arm64-output][arm64-output]]
   - [[#rpi][rpi]]
   - [[#channelpedia-upload][channelpedia upload]]
   - [[#template-test][template-test]]
@@ -219,6 +221,22 @@ export ANSIBLE_PIPELINING=1
 ansible-playbook yavdr07-headless.yml -b -i 'localhost_inventory' --connection=local --tags="all"
 #+END_SRC
 
+#+BEGIN_SRC shell :tangle install-yavdr-arm64.sh :shebang "#!/usr/bin/env bash"
+set -e
+
+if (( $EUID != 0 )); then
+    echo "This script must be run using sudo -H or as root"
+    exit
+fi
+
+. scripts/install-packages.sh
+
+# speed up playbook execution
+export ANSIBLE_PIPELINING=1
+
+ansible-playbook yavdr07-arm64.yml -b -i 'localhost_inventory' --connection=local --tags="all"
+#+END_SRC
+
 #+BEGIN_SRC shell :tangle install-yavdr-rpi.sh :shebang "#!/usr/bin/env bash"
 set -e
 
@@ -344,6 +362,56 @@ For a headless server installation ~yavdr07-headless.yml~ is a good choice
   handlers:
     - import_tasks: handlers/main.yml
 #+END_SRC
+** yavdr07-arm64.yml
+VDR-only setup for Raspberry Pi 4 and 5 on 64 bit installation.
+Please note that kodi is not available at the moment.
+#+begin_src yaml :tangle yavdr07-arm64.yml :padline no
+---
+# file: yavdr07-arm64.yml
+# this playbook set up a yaVDR 0.7 installation on a Raspberry Pi 4 or 5
+# please note that kodi is not available at the moment
+
+- name: set up a headless yaVDR server
+  hosts: all
+  become: true
+  environment:
+    LANG: "{{ default_locale | default('c.UTF-8') }}"
+  roles:
+    - yavdr-common
+    - collect-facts              # query system facts
+    - vdr
+    - arm64-output                        # install rpihddevice and let vdr run on tty7
+    - lifeguardng                # install and configure vdr-addon-lifeguard-ng
+    - headless-session           # set up a headless systemd user session, e.g. for udiskie
+    - yavdr-remote
+    - yavdr-network
+    #- samba-install
+    #- samba-config
+    #- nfs-server
+    - autoinstall-atric-usb      # preconfigure lircd for Atric IR-WakeupUSB receiver
+    - autoinstall-dvbsddevice    # install vdr-plugin-dvbsddevice if a matching card is detected
+    - install-dvb-firmware       # download and install all firmware files from the LibreElec dvb-firmware git repository
+    # - autoinstall-dvbsky-firmware # download and install required firmware files for dvbsky cards
+    - autoinstall-firmware       # download and install firmware files for dvb devices
+    - autoinstall-hardware-irmp  # install yavdr-hardware-irmp if a matching usb device is detected
+    - autoinstall-hauppauge-pvr  # install vdr-plugin-pvrinput if a matching card is found
+    - autoinstall-imonlcd        # install vdr-plugin-imonlcd if a matchind display is connected
+    - autoinstall-imonvfd        # install vdr-plugin-imonvfd if a matchind display is connected
+    - autoinstall-satip          # install vdr-plugin-satip if a Sat>IP server has been found
+    - autoinstall-targavfd       # install vdr-plugin-targavfd if display is connected
+    - autoinstall-yausbir        # preconfigure lircd for yaUsbIR receiver
+    - set-output-plugin  # ensures that only one output plugin is active (a manual override is possible by setting selected_frontend to the name of the wanted output plugin)
+    #- epgd                      # install vdr-epg-daemon
+    #- channelpedia               # upload channels.conf to channelpedia (see role description in Manual)
+    #- wakeup
+    #- channellogos               # use channellogos provided by https://github.com/Jasmeet181/mediaportal-*-logos
+                                 # set the variable channellogos_languages to a list of the langues you want (see group_vars/all)
+                                  # and link them to /var/lib/channellogos/ - this needs at least 300 MB of storage
+  tags:
+    - always
+  handlers:
+    - import_tasks: handlers/main.yml
+#+end_src
 ** yavdr07-rpi.yml
 VDR-only setup for Raspberry Pi 2 and 3. At least 1 GB of RAM is recommended.
 Please note that kodi is not available at the moment.
@@ -8943,9 +9011,42 @@ for language in languages:
                 else:
                     print(err)
 #+END_SRC
+
+** arm64-output
+This role installs vdr-plugin-softhdevice-drm-gles and configures the output to use ~tty7~. A systemd user session allows the use of udiskie and other programs within a systemd user session. Please note that =kodi= is no supported at the moment due to limitation with the dri master.
+#+BEGIN_SRC yaml :tangle roles/arm64-output/tasks/main.yml :mkdirp yes :padline no
+---
+# this role is used to configure the output for arm64 boards like the Raspberry Pi 4 and 5
+
+- name: ensure /etc/systemd/system/vdr.service.d/ exists
+  file:
+    path: /etc/systemd/system/vdr.service.d/
+    state: directory
+
+- name: let vdr run on tty7
+  template:
+    src: templates/rpi.conf.j2
+    dest: /etc/systemd/system/vdr.service.d/99-rpi.conf
+  notify: ['Reload Units', 'Restart VDR']
+  tags:
+    - config
+
+- name: install vdr-plugin-softhddevice-drm-gles
+  apt:
+    name:
+      - vdr-plugin-softhddevice-drm-gles
+    state: present
+  tags:
+    - packages
+
+- name: set preferred_frontend to softhddevice-drm-gles
+  set_fact:
+    preferred_frontend: softhddevice-drm-gles
+    automatically_installed_output_plugin: vdr-plugin-softhddevice-drm-gles
+
+#+END_SRC
 ** rpi
 This role installs =vdr-plugin-rpihddevice= and configures the output to use =tty7=. A Systemd User session allows to use =udiskie= and other programs within a systemd user session. Please note that =kodi= is not supported at the moment on the Raspberry Pi platform since it requires a special build.
-
 *** tasks
 #+BEGIN_SRC yaml :tangle roles/rpi/tasks/main.yml :mkdirp yes :padline no
 ---
