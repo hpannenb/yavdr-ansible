@@ -7,7 +7,7 @@
     url: https://github.com/LibreELEC/dvb-firmware/raw/master/firmware/dvb-demod-si2168-b40-01.fw
     checksum: sha256:d25c7deb9f69dca232ce25ab108da8ff5013d6d39088e0ec3475d97ded8af718
     dest: /lib/firmware/dvb-demod-si2168-b40-01.fw
-  when: '(hauppauge_wintv_hd_usb_ids | union(usb)) | length > 0 or (hauppauge_wintv_hd_pci_ids | union(pci)) | length > 0'
+  when: '(hauppauge_wintv_hd_usb_ids | intersect(usb)) | length > 0 or (hauppauge_wintv_hd_pci_ids | intersect(pci)) | length > 0'
   notify: ['reboot required']
 
 - name: Firmware dvb-demod-si2168-02.fw for Hauppauge WinTV quadHD
@@ -31,14 +31,14 @@
     url: https://github.com/LibreELEC/dvb-firmware/raw/master/firmware/dvb-demod-m88rs6000.fw
     checksum: sha256:9ac84583d83a4222909cb568236b7786e436f27dc050e60a31df404bb1be19dc
     dest: /lib/firmware/dvb-demod-m88rs6000.fw
-  when: '(m88rs6000_pci_ids | union(pci)) | length > 0'
+  when: '(m88rs6000_pci_ids | intersect(pci)) | length > 0'
 
 - name: Firmware dvb-demod-m88ds3103.fw for DVBSky S952 V2
   get_url:
     url: https://github.com/LibreELEC/dvb-firmware/raw/master/firmware/dvb-demod-m88ds3103.fw
     checksum: sha256:4767ab80ceba4a66315cbec2a07ae1f7ebbd19c5758fd098b932e02c9108eff9
     dest: /lib/firmware/dvb-demod-m88ds3103.fw
-  when: '(m88ds3103_pci_ids | union(pci)) | length > 0'
+  when: '(m88ds3103_pci_ids | intersect(pci)) | length > 0'
   notify: ['reboot required']
 
 - name: Firmware ngenge_18.fw for ngene cards
@@ -70,5 +70,5 @@
     url: https://github.com/LibreELEC/dvb-firmware/raw/master/firmware/dvb-fe-ds3000.fw
     checksum: sha256:ad8c23bfb51642f48d31fe4f797182352bb13a4d4b7247b25aea18e208e0e882
     dest: /lib/firmware/dvb-fe-ds3000.fw
-  when: '(ds3000_pci_ids | union(pci)) | length > 0 or (ds3000_usb_ids | union(usb)) | length > 0'
+  when: '(ds3000_pci_ids | intersect(pci)) | length > 0 or (ds3000_usb_ids | intersect(usb)) | length > 0'
   notify: ['reboot required']
