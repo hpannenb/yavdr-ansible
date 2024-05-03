@@ -9025,8 +9025,8 @@ This role installs vdr-plugin-softhdevice-drm-gles and configures the output to 
 
 - name: let vdr run on tty7
   template:
-    src: templates/rpi.conf.j2
-    dest: /etc/systemd/system/vdr.service.d/99-rpi.conf
+    src: templates/systemd/console-output.conf.j2
+    dest: /etc/systemd/system/vdr.service.d/99-console-output.conf
   notify: ['Reload Units', 'Restart VDR']
   tags:
     - config
@@ -9045,6 +9045,20 @@ This role installs vdr-plugin-softhdevice-drm-gles and configures the output to 
     automatically_installed_output_plugin: vdr-plugin-softhddevice-drm-gles
 
 #+END_SRC
+
+#+begin_src jinja2 :tangle roles/arm64-output/templates/systemd/console-output.conf.j2
+{{ ansible_managed | comment }}
+[Unit]
+Conflicts=getty@tty7.service
+
+[Service]
+StandardInput=tty-force
+StandardOutput=syslog
+TTYPath=/dev/tty7
+TTYReset=no
+TTYVHangup=yes
+ExecStartPre=/usr/bin/chvt 7
+#+end_src
 ** rpi
 This role installs =vdr-plugin-rpihddevice= and configures the output to use =tty7=. A Systemd User session allows to use =udiskie= and other programs within a systemd user session. Please note that =kodi= is not supported at the moment on the Raspberry Pi platform since it requires a special build.
 *** tasks
