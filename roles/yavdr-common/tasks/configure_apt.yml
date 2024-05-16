@@ -12,7 +12,7 @@
   loop: "{{ repositories|flatten(levels=1) }}"
   tags:
     - ppa
-  when: ansible_architecture is match("x86_.*")
+  when: ansible_architecture is match("x86_.*") or ansible_architecture == "aarch64"
 
 - name: add PPAs for Raspberry Pi
   apt_repository:
