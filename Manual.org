@@ -4459,6 +4459,8 @@ preferred_refreshrates:
 
 intel_boot_options: ""
 intel_set_boot_edid: false
+intel_driver: "intel"  # choose one of "intel" and "modesetting"
+softhddevice_intel_output_method: "va-api"  # choose one of va-api, va-api-glx, va-api-egl
 nvidia_force_dpi: 0
 
 yavdr_frontend:
@@ -4532,8 +4534,15 @@ yavdr_frontend:
   loop:
     - '-D'
     - '-w alsa-driver-broken'
-    - '{{ "-v va-api" if (intel_detected and not nvidia_detected) else "" }}'
     # - '-a pulse' # do we need this with our existing asound.conf?
+
+- name: vdr-config | set intel video output method for softhddevice
+  lineinfile:
+    path: /etc/vdr/conf.avail/softhddevice.conf
+    state: present
+    regexp: "-v .*"
+    line: "-v {{ softhddevice_intel_output_method | default('va-api') }}"
+  when: (intel_detected and not nvidia_detected)
 
 - name: add a login shell for the user vdr
   user:
@@ -4899,8 +4908,8 @@ Before=graphical.target
 [Service]
 Type=forking
 ExecStartPre=/usr/bin/bash -c "printf '\0' > /sys/module/drm/parameters/edid_firmware"
-ExecStartPre=-/usr/bin/bash -c 'shopt -s nullglob; for e in /sys/kernel/debug/dri/0/*/edid_override; do echo -n reset > "$$e"; done'
-ExecStartPre=/usr/bin/bash -c 'shopt -s nullglob; for e in /sys/class/drm/card0*/status; do echo -n detect > "$$e"; done'
+ExecStartPre=-/usr/bin/bash -c 'shopt -s nullglob; for e in /sys/kernel/debug/dri/[0-9]/*/edid_override; do echo -n reset > "$$e"; done'
+ExecStartPre=/usr/bin/bash -c 'shopt -s nullglob; for e in /sys/class/drm/card[0-9]*/status; do echo -n detect > "$$e"; done'
 ExecStart=/usr/bin/x-daemon -logverbose 6 -noreset %I -config /etc/X11/xorg-verbose.conf
 #+END_SRC
 ***** Drop-in snippet for x@.service
