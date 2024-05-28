@@ -8589,6 +8589,15 @@ install serial_ir setserial /dev/{{ serial_ir_device }} uart none; /sbin/modprob
 #+BEGIN_SRC yaml :tangle roles/kodi/defaults/main.yml
 kodi_as_flatpak: False
 kodi_config_dir: '{{ vdr.home }}/{{ kodi_as_flatpak | ternary(".var/app/tv.kodi.Kodi/data", ".kodi") }}'
+flatpak_kodi_allowed_dirs:
+  - /media
+  - /net
+  - /srv/audio
+  - /srv/files
+  - /srv/picture
+  - /srv/video
+  - /home/vdr/Downloads
+  - /var/lib/vdr/Downloads
 #+END_SRC
 *** tasks
 **** Install KODI
