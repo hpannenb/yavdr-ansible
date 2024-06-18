@@ -80,6 +80,13 @@
       - xdg-utils
     state: present
 
+- name: apt | install intel xorg driver
+  apt:
+    name:
+      - xserver-xorg-video-intel
+    state: present
+  when: intel_driver == 'intel'
+
 - name: set the vdr instance id for yavdr-frontend
   yaml_edit:
     path: /etc/yavdr-frontend/config.yml
