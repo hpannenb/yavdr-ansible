@@ -3424,6 +3424,8 @@ if __name__ == '__main__':
 - name: ensure ~/bin exists for vdr user
   file:
     path: "{{ vdr.home }}/bin"
+    owner: "{{ vdr.user }}"
+    group: "{{ vdr.group}}"
     state: directory
     mode: 0755
 
@@ -3437,6 +3439,8 @@ if __name__ == '__main__':
   file:
     path: "{{ vdr.home }}/.config/systemd/user"
     state: directory
+    owner: "{{ vdr.user }}"
+    group: "{{ vdr.group }}"
     mode: 0755
 
 - name: create dbus service for dbus_pulsectl
@@ -3444,6 +3448,7 @@ if __name__ == '__main__':
     src: dbus_pulsectl/dbus-pulsectl.service.j2
     dest: "{{ vdr.home }}/.config/systemd/user/dbus-pulsectl.service"
     owner: "{{ vdr.user }}"
+    group: "{{ vdr.group }}"
 
     # TODO: better way to enable unit than in openbox autostart set by yavdr-desktop?
     
@@ -3596,7 +3601,7 @@ This role prepares a basic systemd user session
     path: "{{ vdr.home }}/.config/systemd/user"
     state: directory
     owner: "{{ vdr.user }}"
-    group: "{{ vdr.user }}"
+    group: "{{ vdr.group }}"
     mode: 0755
 
 - name: make vdr.user owner of ~/.config
@@ -3605,7 +3610,7 @@ This role prepares a basic systemd user session
     state: directory
     recurse: true
     owner: "{{ vdr.user }}"
-    group: "{{ vdr.user }}"
+    group: "{{ vdr.group }}"
     mode: 0755
 
 - name: create tmux.service for the session
@@ -3662,7 +3667,7 @@ dependencies:
     path: "{{ vdr.home }}/.config"
     state: directory
     owner: "{{ vdr.user }}"
-    group: "{{ vdr.user }}"
+    group: "{{ vdr.group }}"
     mode: 0755
 
 - name: expand template for ~/.config/headless-session
@@ -3764,6 +3769,8 @@ This role installs and preconfigures udiskie
   template:
     src: templates/config.yml.j2
     dest: '{{ vdr.home }}/.config/udiskie/config.yml'
+    owner: '{{ vdr.user }}'
+    group: '{{ vdr.group }}'
 
 
 - name: create ~/.config/systemd/user
@@ -3777,6 +3784,8 @@ This role installs and preconfigures udiskie
   template:
     src: templates/udiskie.service.j2
     dest: '{{ vdr.home }}/.config/systemd/user/udiskie.service'
+    owner: '{{ vdr.user }}'
+    group: '{{ vdr.group }}'
 
 - name: create ~/bin
   file:
@@ -3790,8 +3799,8 @@ This role installs and preconfigures udiskie
     src: templates/udiskie_vdr_mount_helper.j2
     dest: '{{ vdr.home }}/bin/udiskie_vdr_mount_helper'
     mode: 0755
-    owner: vdr
-    group: vdr
+    owner: "{{ vdr.user }}"
+    group: "{{ vdr.group }}"
 
 - name: expand template for udiskie vdr commands
   template:
@@ -5486,6 +5495,7 @@ dependencies:
     mode: '0775'
     owner: '{{ vdr.user }}'
     group: '{{ vdr.group }}'
+    recurse: yes
   loop:
     - '{{ vdr.home }}/.config/systemd/user'
     - '{{ vdr.home }}/.config/openbox'
