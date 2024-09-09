@@ -7,7 +7,7 @@
 from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 from collections import OrderedDict
-from typing import Generator, List, Mapping
+from typing import Generator, List, Mapping, Tuple
 import traceback
 
 from ansible.module_utils.basic import AnsibleModule
@@ -54,7 +54,7 @@ def find_dependencies(
     return dependencies
 
 
-def module_dependency_gen() -> Generator[str, List[str]]:
+def module_dependency_gen() -> Generator[Tuple[str, List[str]], None, None]:
     with open('/proc/modules') as f:
         for line in f:
             module_name, _, _, dependencies, *_ = line.split()
